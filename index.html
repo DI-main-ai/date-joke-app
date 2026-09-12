@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#fff0f5" />
+  <title>Important Question</title>
+  <style>
+    :root {
+      --bg1: #fff0f5;
+      --bg2: #ffe4ec;
+      --card: rgba(255,255,255,.92);
+      --text: #2d1b24;
+      --muted: #7b5d6b;
+      --yes: #ef476f;
+      --yes-hover: #d93e62;
+      --no: #e5e7eb;
+      --no-text: #2f3137;
+      --border: rgba(45,27,36,.10);
+      --shadow: 0 18px 60px rgba(101,45,70,.15);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,255,255,.95), transparent 26%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+    }
+
+    body {
+      min-height: 100dvh;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .hearts {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: .30;
+    }
+
+    .heart {
+      position: absolute;
+      font-size: clamp(18px, 3vw, 34px);
+      animation: floatUp linear infinite;
+    }
+
+    @keyframes floatUp {
+      0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+      10%  { opacity: .75; }
+      90%  { opacity: .45; }
+      100% { transform: translateY(-20vh) rotate(25deg); opacity: 0; }
+    }
+
+    main {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: min(92vw, 560px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: clamp(28px, 6vw, 54px);
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    h1 {
+      font-size: clamp(30px, 7vw, 52px);
+      line-height: 1.06;
+      margin: 0 0 12px;
+      letter-spacing: -.03em;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 16px;
+    }
+
+    .emoji {
+      display: block;
+      font-size: 54px;
+      margin-bottom: 10px;
+    }
+
+    .actions {
+      margin: 34px auto 0;
+      width: min(100%, 400px);
+      height: 215px;
+      position: relative;
+    }
+
+    button {
+      appearance: none;
+      -webkit-appearance: none;
+      border: 0;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      white-space: nowrap;
+    }
+
+    #yesBtn {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      min-width: 150px;
+      min-height: 58px;
+      background: var(--yes);
+      color: white;
+      padding: 17px 34px;
+      font-size: 20px;
+      box-shadow: 0 10px 24px rgba(239,71,111,.28);
+      transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+      z-index: 3;
+    }
+
+    #yesBtn:hover {
+      background: var(--yes-hover);
+      transform: translateX(-50%) translateY(-2px) scale(1.02);
+    }
+
+    #yesBtn:active {
+      transform: translateX(-50%) scale(.98);
+    }
+
+    #noBtn {
+      position: absolute;
+      left: 50%;
+      top: 82px;
+      transform: translateX(-50%);
+      width: 150px;
+      min-height: 58px;
+      padding: 17px 34px;
+      background: var(--no);
+      color: var(--no-text);
+      border: 1px solid rgba(45,27,36,.10);
+      box-shadow: 0 9px 20px rgba(45,27,36,.12);
+      font-size: 20px;
+      line-height: 1.2;
+      touch-action: none;
+      transition: left .10s ease-out, top .10s ease-out, transform .10s ease-out;
+      will-change: left, top, transform;
+      z-index: 5;
+    }
+
+    .screen[hidden] { display: none !important; }
+
+    .form-wrap {
+      margin-top: 26px;
+      display: grid;
+      gap: 14px;
+      text-align: left;
+    }
+
+    label {
+      font-weight: 800;
+      font-size: 14px;
+      padding-left: 4px;
+    }
+
+    input[type="datetime-local"] {
+      width: 100%;
+      border: 1px solid rgba(45,27,36,.16);
+      background: white;
+      color: var(--text);
+      border-radius: 16px;
+      padding: 16px;
+      font: inherit;
+      font-size: 16px;
+      outline: none;
+    }
+
+    input[type="datetime-local"]:focus {
+      border-color: rgba(239,71,111,.65);
+      box-shadow: 0 0 0 4px rgba(239,71,111,.10);
+    }
+
+    .submit {
+      margin-top: 5px;
+      width: 100%;
+      padding: 16px 22px;
+      background: var(--yes);
+      color: white;
+      font-size: 17px;
+    }
+
+    .submit:hover { background: var(--yes-hover); }
+
+    .small {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .confirmation {
+      margin-top: 24px;
+      border-radius: 20px;
+      padding: 20px;
+      background: rgba(239,71,111,.08);
+      border: 1px solid rgba(239,71,111,.15);
+    }
+
+    .confirmation strong {
+      display: block;
+      margin-top: 7px;
+      font-size: clamp(19px, 4vw, 24px);
+      color: var(--text);
+    }
+
+    .secondary {
+      margin-top: 18px;
+      padding: 12px 20px;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid rgba(45,27,36,.12);
+    }
+
+    .status {
+      min-height: 20px;
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 520px) {
+      .card { padding: 32px 22px; border-radius: 24px; }
+      .actions { width: 100%; height: 220px; }
+      #yesBtn { width: min(280px, 88%); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .heart { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hearts" aria-hidden="true" id="hearts"></div>
+
+  <main>
+    <section class="card">
+      <div id="questionScreen" class="screen">
+        <span class="emoji">💌</span>
+        <h1>Will you go on a date with me?</h1>
+        <p>I have a very important question and there is definitely no trick involved.</p>
+
+        <div class="actions" id="actions">
+          <button id="yesBtn" type="button">Yes ❤️</button>
+          <button id="noBtn" type="button" aria-label="No">No</button>
+        </div>
+      </div>
+
+      <div id="scheduleScreen" class="screen" hidden>
+        <span class="emoji">🥳</span>
+        <h1>Excellent choice.</h1>
+        <p>Pick a future date and time you're free, and I'll treat it as the date + pickup time.</p>
+
+        <form id="dateForm" class="form-wrap">
+          <label for="dateTime">When are you free?</label>
+          <input id="dateTime" name="dateTime" type="datetime-local" required />
+          <button class="submit" type="submit">Lock it in 💘</button>
+          <div id="sendStatus" class="status" aria-live="polite"></div>
+        </form>
+      </div>
+
+      <div id="confirmationScreen" class="screen" hidden>
+        <span class="emoji">📅</span>
+        <h1>It's a date.</h1>
+        <p>You picked:</p>
+        <div class="confirmation">
+          <span>Pickup time</span>
+          <strong id="chosenDate"></strong>
+        </div>
+        <p class="small">Screenshot this so there can be no claims of “I forgot.” 😌</p>
+        <button id="changeBtn" class="secondary" type="button">Change the time</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Optional: paste a Formspree endpoint here later to receive selections by email.
+    const FORM_ENDPOINT = "";
+
+    const questionScreen = document.getElementById("questionScreen");
+    const scheduleScreen = document.getElementById("scheduleScreen");
+    const confirmationScreen = document.getElementById("confirmationScreen");
+    const actions = document.getElementById("actions");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const dateForm = document.getElementById("dateForm");
+    const dateTime = document.getElementById("dateTime");
+    const chosenDate = document.getElementById("chosenDate");
+    const changeBtn = document.getElementById("changeBtn");
+    const sendStatus = document.getElementById("sendStatus");
+
+    let lastNoMove = 0;
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function setMinimumDateTime() {
+      const now = new Date();
+      now.setSeconds(0, 0);
+      now.setMinutes(now.getMinutes() + 1);
+      const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      dateTime.min = local;
+    }
+
+    function pointToRectDistance(x, y, rect) {
+      const nearestX = clamp(x, rect.left, rect.right);
+      const nearestY = clamp(y, rect.top, rect.bottom);
+      return Math.hypot(x - nearestX, y - nearestY);
+    }
+
+    function moveNoButton(pointerClientX, pointerClientY, force = false) {
+      if (questionScreen.hidden) return;
+
+      const now = performance.now();
+      if (!force && now - lastNoMove < 30) return;
+      lastNoMove = now;
+
+      const areaRect = actions.getBoundingClientRect();
+      const btnRect = noBtn.getBoundingClientRect();
+      const width = btnRect.width;
+      const height = btnRect.height;
+
+      const currentLeft = btnRect.left - areaRect.left;
+      const currentTop = btnRect.top - areaRect.top;
+      const centerX = currentLeft + width / 2;
+      const centerY = currentTop + height / 2;
+
+      let localPointerX = pointerClientX - areaRect.left;
+      let localPointerY = pointerClientY - areaRect.top;
+
+      let dx = centerX - localPointerX;
+      let dy = centerY - localPointerY;
+      let length = Math.hypot(dx, dy);
+
+      if (length < 4) {
+        const roomRight = areaRect.width - centerX;
+        const roomLeft = centerX;
+        dx = roomRight >= roomLeft ? 1 : -1;
+        dy = (Math.random() - 0.5) * 0.35;
+        length = Math.hypot(dx, dy);
+      }
+
+      dx /= length;
+      dy /= length;
+
+      const isTouch = window.matchMedia("(pointer: coarse)").matches;
+      const hop = isTouch ? 88 : 78;
+      const sideways = (Math.random() - 0.5) * 20;
+      const perpX = -dy;
+      const perpY = dx;
+
+      const minX = 8;
+      const maxX = Math.max(minX, areaRect.width - width - 8);
+      const minY = 76;
+      const maxY = Math.max(minY, areaRect.height - height - 8);
+
+      let nextLeft = centerX + dx * hop + perpX * sideways - width / 2;
+      let nextTop = centerY + dy * hop + perpY * sideways - height / 2;
+
+      nextLeft = clamp(nextLeft, minX, maxX);
+      nextTop = clamp(nextTop, minY, maxY);
+
+      if (Math.hypot(nextLeft - currentLeft, nextTop - currentTop) < 42) {
+        const roomRight = maxX - currentLeft;
+        const roomLeft = currentLeft - minX;
+        nextLeft = roomRight >= roomLeft
+          ? clamp(currentLeft + 86, minX, maxX)
+          : clamp(currentLeft - 86, minX, maxX);
+        nextTop = clamp(currentTop + (Math.random() > 0.5 ? 24 : -24), minY, maxY);
+      }
+
+      noBtn.style.left = `${nextLeft}px`;
+      noBtn.style.top = `${nextTop}px`;
+      noBtn.style.transform = `rotate(${(Math.random() * 2 - 1).toFixed(1)}deg)`;
+    }
+
+    document.addEventListener("pointermove", (event) => {
+      if (questionScreen.hidden || event.pointerType !== "mouse") return;
+      const rect = noBtn.getBoundingClientRect();
+      if (pointToRectDistance(event.clientX, event.clientY, rect) <= 12) {
+        moveNoButton(event.clientX, event.clientY);
+      }
+    }, { capture: true, passive: true });
+
+    noBtn.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      moveNoButton(event.clientX, event.clientY, true);
+    }, { capture: true, passive: false });
+
+    noBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+      return false;
+    }, { capture: true });
+
+    noBtn.addEventListener("contextmenu", (event) => event.preventDefault());
+
+    yesBtn.addEventListener("click", () => {
+      questionScreen.hidden = true;
+      scheduleScreen.hidden = false;
+      confirmationScreen.hidden = true;
+      setMinimumDateTime();
+    });
+
+    changeBtn.addEventListener("click", () => {
+      confirmationScreen.hidden = true;
+      scheduleScreen.hidden = false;
+      sendStatus.textContent = "";
+      setMinimumDateTime();
+    });
+
+    dateForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!dateTime.value) return;
+
+      const selected = new Date(dateTime.value);
+      if (Number.isNaN(selected.getTime()) || selected <= new Date()) {
+        sendStatus.textContent = "Pick a time in the future 🙂";
+        return;
+      }
+
+      const formatted = selected.toLocaleString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      });
+
+      chosenDate.textContent = formatted;
+      scheduleScreen.hidden = true;
+      confirmationScreen.hidden = false;
+
+      if (!FORM_ENDPOINT) return;
+
+      try {
+        await fetch(FORM_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            selected_date_time: formatted,
+            selected_date_time_raw: dateTime.value,
+            _subject: "A date was selected ❤️"
+          })
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    });
+
+    const hearts = document.getElementById("hearts");
+    const symbols = ["❤", "♡", "💕"];
+    for (let i = 0; i < 14; i++) {
+      const el = document.createElement("span");
+      el.className = "heart";
+      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      el.style.left = Math.random() * 100 + "vw";
+      el.style.animationDuration = (9 + Math.random() * 10) + "s";
+      el.style.animationDelay = (-Math.random() * 18) + "s";
+      hearts.appendChild(el);
+    }
+
+    setMinimumDateTime();
+  </script>
+</body>
+</html>
