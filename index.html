@@ -373,8 +373,8 @@
       dy /= length;
 
       const isTouch = window.matchMedia("(pointer: coarse)").matches;
-      const hop = isTouch ? 165 : 112;
-      const sideways = (Math.random() - 0.5) * (isTouch ? 54 : 34);
+      const hop = isTouch ? 330 : 112;
+      const sideways = (Math.random() - 0.5) * (isTouch ? 108 : 34);
       const perpX = -dy;
       const perpY = dx;
 
@@ -393,9 +393,9 @@
         const roomRight = maxX - currentLeft;
         const roomLeft = currentLeft - minX;
         nextLeft = roomRight >= roomLeft
-          ? clamp(currentLeft + (isTouch ? 150 : 120), minX, maxX)
-          : clamp(currentLeft - (isTouch ? 150 : 120), minX, maxX);
-        nextTop = clamp(currentTop + (Math.random() > 0.5 ? (isTouch ? 60 : 36) : (isTouch ? -60 : -36)), minY, maxY);
+          ? clamp(currentLeft + (isTouch ? 300 : 120), minX, maxX)
+          : clamp(currentLeft - (isTouch ? 300 : 120), minX, maxX);
+        nextTop = clamp(currentTop + (Math.random() > 0.5 ? (isTouch ? 120 : 36) : (isTouch ? -120 : -36)), minY, maxY);
       }
 
       noBtn.style.left = `${nextLeft}px`;
