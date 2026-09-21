@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#fff0f5" />
+  <title>Create a Date Link</title>
+  <style>
+    :root {
+      --bg1: #fff0f5;
+      --bg2: #ffe4ec;
+      --card: rgba(255,255,255,.94);
+      --text: #2d1b24;
+      --muted: #7b5d6b;
+      --accent: #ef476f;
+      --accent-hover: #d93e62;
+      --border: rgba(45,27,36,.12);
+      --shadow: 0 18px 60px rgba(101,45,70,.15);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,255,255,.95), transparent 26%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+    }
+    body { min-height: 100dvh; }
+    main {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+    .card {
+      width: min(92vw, 560px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: clamp(28px, 6vw, 50px);
+    }
+    .emoji {
+      display: block;
+      text-align: center;
+      font-size: 52px;
+      margin-bottom: 8px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: clamp(30px, 7vw, 46px);
+      line-height: 1.08;
+      letter-spacing: -.03em;
+    }
+    .intro {
+      margin: 0 0 28px;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    form {
+      display: grid;
+      gap: 14px;
+    }
+    label {
+      padding-left: 4px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(45,27,36,.16);
+      background: white;
+      color: var(--text);
+      border-radius: 16px;
+      padding: 16px;
+      font: inherit;
+      font-size: 16px;
+      outline: none;
+    }
+    input:focus {
+      border-color: rgba(239,71,111,.65);
+      box-shadow: 0 0 0 4px rgba(239,71,111,.10);
+    }
+    button {
+      appearance: none;
+      -webkit-appearance: none;
+      border: 0;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .primary {
+      margin-top: 8px;
+      width: 100%;
+      padding: 16px 22px;
+      background: var(--accent);
+      color: white;
+      font-size: 18px;
+      box-shadow: 0 10px 24px rgba(239,71,111,.24);
+    }
+    .primary:hover { background: var(--accent-hover); }
+    .status {
+      min-height: 20px;
+      margin-top: 8px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .result {
+      margin-top: 26px;
+      padding: 20px;
+      border-radius: 20px;
+      background: rgba(239,71,111,.08);
+      border: 1px solid rgba(239,71,111,.16);
+    }
+    .result[hidden] { display: none; }
+    .result-title {
+      margin: 0 0 10px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .link-box {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 13px 14px;
+      border-radius: 14px;
+      background: white;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+    .result-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .secondary {
+      padding: 13px 16px;
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    @media (max-width: 520px) {
+      main { padding: 18px 20px; align-items: start; }
+      .card { padding: 32px 22px; border-radius: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card">
+      <span class="emoji">💘</span>
+      <h1>Make your date link</h1>
+      <p class="intro">Enter the details below and you'll get a private, random link to send.</p>
+
+      <form id="creatorForm">
+        <label for="senderName">Your name</label>
+        <input id="senderName" name="senderName" type="text" autocomplete="name" required />
+
+        <label for="senderEmail">Your email address</label>
+        <input id="senderEmail" name="senderEmail" type="email" autocomplete="email" required />
+
+        <label for="recipientName">Recipient's name</label>
+        <input id="recipientName" name="recipientName" type="text" autocomplete="off" required />
+
+        <button class="primary" id="createBtn" type="submit">Create my link 💌</button>
+        <div id="status" class="status" aria-live="polite"></div>
+      </form>
+
+      <section class="result" id="result" hidden>
+        <p class="result-title">Your date link is ready 🎉</p>
+        <div class="link-box" id="generatedLink"></div>
+        <div class="result-actions">
+          <button type="button" class="secondary" id="copyBtn">Copy link</button>
+          <button type="button" class="secondary" id="shareBtn">Share</button>
+        </div>
+        <div class="note">
+          The URL contains only a random code. Your name, email, and the recipient's name are not included in the link.
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script>
+    const BACKEND_URL = window.DATE_JOKE_BACKEND_URL || "";
+    const form = document.getElementById("creatorForm");
+    const senderName = document.getElementById("senderName");
+    const senderEmail = document.getElementById("senderEmail");
+    const recipientName = document.getElementById("recipientName");
+    const createBtn = document.getElementById("createBtn");
+    const status = document.getElementById("status");
+    const result = document.getElementById("result");
+    const generatedLink = document.getElementById("generatedLink");
+    const copyBtn = document.getElementById("copyBtn");
+    const shareBtn = document.getElementById("shareBtn");
+
+    let currentLink = "";
+
+    function makeOpaqueToken(length = 24) {
+      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+      const bytes = new Uint8Array(length);
+      crypto.getRandomValues(bytes);
+      let token = "";
+      for (let i = 0; i < bytes.length; i++) {
+        token += alphabet[bytes[i] % alphabet.length];
+      }
+      return token;
+    }
+
+    function buildRecipientUrl(token) {
+      const base = new URL("./", window.location.href);
+      base.search = "";
+      base.hash = "";
+      base.searchParams.set("d", token);
+      return base.toString();
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      result.hidden = true;
+      status.textContent = "";
+
+      if (!BACKEND_URL) {
+        status.textContent = "The email backend still needs its one-time setup.";
+        return;
+      }
+
+      const token = makeOpaqueToken();
+      const body = new URLSearchParams({
+        action: "create",
+        token,
+        senderName: senderName.value.trim(),
+        senderEmail: senderEmail.value.trim(),
+        recipientName: recipientName.value.trim()
+      });
+
+      createBtn.disabled = true;
+      createBtn.textContent = "Creating...";
+
+      try {
+        await fetch(BACKEND_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+          },
+          body
+        });
+
+        currentLink = buildRecipientUrl(token);
+        generatedLink.textContent = currentLink;
+        result.hidden = false;
+        status.textContent = "";
+      } catch (error) {
+        console.error(error);
+        status.textContent = "I couldn't create the link. Please try again.";
+      } finally {
+        createBtn.disabled = false;
+        createBtn.textContent = "Create my link 💌";
+      }
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!currentLink) return;
+      await navigator.clipboard.writeText(currentLink);
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => copyBtn.textContent = "Copy link", 1200);
+    });
+
+    shareBtn.addEventListener("click", async () => {
+      if (!currentLink) return;
+      if (navigator.share) {
+        await navigator.share({
+          title: "I have a question for you 💌",
+          text: "Open this when you get a chance:",
+          url: currentLink
+        });
+      } else {
+        await navigator.clipboard.writeText(currentLink);
+        shareBtn.textContent = "Copied!";
+        setTimeout(() => shareBtn.textContent = "Share", 1200);
+      }
+    });
+  </script>
+</body>
+</html>
