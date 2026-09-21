@@ -103,7 +103,7 @@
     .actions {
       margin: 34px auto 0;
       width: min(100%, 400px);
-      height: 215px;
+      height: 64px;
       position: relative;
     }
 
@@ -146,10 +146,10 @@
     }
 
     #noBtn {
-      position: absolute;
+      position: fixed;
       left: 50%;
-      top: 82px;
-      transform: translateX(-50%);
+      top: 70%;
+      transform: translate(-50%, -50%);
       width: 150px;
       min-height: 58px;
       padding: 17px 34px;
@@ -160,7 +160,7 @@
       font-size: 20px;
       line-height: 1.2;
       touch-action: none;
-      transition: left .10s ease-out, top .10s ease-out, transform .10s ease-out;
+      transition: left .14s ease-out, top .14s ease-out, transform .14s ease-out;
       will-change: left, top, transform;
       z-index: 5;
     }
@@ -249,7 +249,7 @@
 
     @media (max-width: 520px) {
       .card { padding: 32px 22px; border-radius: 24px; }
-      .actions { width: 100%; height: 420px; }
+      .actions { width: 100%; height: 64px; }
       #yesBtn { width: min(220px, 74%); }
     }
 
@@ -275,13 +275,11 @@
       <div id="scheduleScreen" class="screen" hidden>
         <span class="emoji">🥳</span>
         <h1>Excellent choice.</h1>
-        <p>Pick a future date and time you're free, and I'll treat it as the date + pickup time.</p>
-
         <form id="dateForm" class="form-wrap">
-          <label for="dateTime">When are you free?</label>
+          <label for="dateTime">When are you free? I’ll treat this as the pickup time</label>
           <input id="dateTime" name="dateTime" type="datetime-local" required />
 
-          <label for="favoriteFood">Favorite restaurant or type of food?</label>
+          <label for="favoriteFood">Favorite restaurant or favorite type of food?</label>
           <input
             id="favoriteFood"
             name="favoriteFood"
@@ -333,6 +331,8 @@
     const sendStatus = document.getElementById("sendStatus");
 
     let lastNoMove = 0;
+    let noHasMoved = false;
+    let lastCorner = -1;
 
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
@@ -354,84 +354,101 @@
       return Math.hypot(x - nearestX, y - nearestY);
     }
 
-    function moveNoButton(pointerClientX, pointerClientY, force = false) {
+    function getNoGeometry() {
+      const rect = noBtn.getBoundingClientRect();
+      const yesRect = yesBtn.getBoundingClientRect();
+      const margin = 18;
+      const topY = Math.min(
+        window.innerHeight - rect.height - margin,
+        yesRect.bottom + margin
+      );
+      const bottomY = Math.max(
+        topY,
+        window.innerHeight - rect.height - margin
+      );
+      const leftX = margin;
+      const rightX = Math.max(
+        leftX,
+        window.innerWidth - rect.width - margin
+      );
+
+      return { rect, yesRect, margin, topY, bottomY, leftX, rightX };
+    }
+
+    function positionNoAtStart() {
+      if (questionScreen.hidden || noHasMoved) return;
+
+      const { rect, yesRect } = getNoGeometry();
+      const left = (window.innerWidth - rect.width) / 2;
+
+      // Midway between the bottom of Yes and the bottom of the viewport.
+      const availableTop = yesRect.bottom;
+      const availableBottom = window.innerHeight;
+      const centerY = availableTop + (availableBottom - availableTop) / 2;
+      const top = clamp(
+        centerY - rect.height / 2,
+        yesRect.bottom + 12,
+        window.innerHeight - rect.height - 18
+      );
+
+      noBtn.style.left = `${left}px`;
+      noBtn.style.top = `${top}px`;
+      noBtn.style.transform = "none";
+    }
+
+    function moveNoButton(force = false) {
       if (questionScreen.hidden) return;
 
       const now = performance.now();
-      if (!force && now - lastNoMove < 30) return;
+      if (!force && now - lastNoMove < 35) return;
       lastNoMove = now;
+      noHasMoved = true;
 
-      const areaRect = actions.getBoundingClientRect();
-      const btnRect = noBtn.getBoundingClientRect();
-      const width = btnRect.width;
-      const height = btnRect.height;
+      const { topY, bottomY, leftX, rightX } = getNoGeometry();
 
-      const currentLeft = btnRect.left - areaRect.left;
-      const currentTop = btnRect.top - areaRect.top;
-      const centerX = currentLeft + width / 2;
-      const centerY = currentTop + height / 2;
+      const corners = [
+        { left: leftX,  top: topY },     // top-left
+        { left: rightX, top: topY },     // top-right
+        { left: leftX,  top: bottomY },  // bottom-left
+        { left: rightX, top: bottomY }   // bottom-right
+      ];
 
-      let localPointerX = pointerClientX - areaRect.left;
-      let localPointerY = pointerClientY - areaRect.top;
+      let nextCorner;
+      do {
+        nextCorner = Math.floor(Math.random() * corners.length);
+      } while (nextCorner === lastCorner && corners.length > 1);
 
-      let dx = centerX - localPointerX;
-      let dy = centerY - localPointerY;
-      let length = Math.hypot(dx, dy);
+      lastCorner = nextCorner;
+      const target = corners[nextCorner];
 
-      if (length < 4) {
-        const roomRight = areaRect.width - centerX;
-        const roomLeft = centerX;
-        dx = roomRight >= roomLeft ? 1 : -1;
-        dy = (Math.random() - 0.5) * 0.35;
-        length = Math.hypot(dx, dy);
-      }
-
-      dx /= length;
-      dy /= length;
-
-      const isTouch = window.matchMedia("(pointer: coarse)").matches;
-      const hop = isTouch ? 660 : 112;
-      const sideways = (Math.random() - 0.5) * (isTouch ? 216 : 34);
-      const perpX = -dy;
-      const perpY = dx;
-
-      const minX = 8;
-      const maxX = Math.max(minX, areaRect.width - width - 8);
-      const minY = 76;
-      const maxY = Math.max(minY, areaRect.height - height - 8);
-
-      let nextLeft = centerX + dx * hop + perpX * sideways - width / 2;
-      let nextTop = centerY + dy * hop + perpY * sideways - height / 2;
-
-      nextLeft = clamp(nextLeft, minX, maxX);
-      nextTop = clamp(nextTop, minY, maxY);
-
-      if (Math.hypot(nextLeft - currentLeft, nextTop - currentTop) < 42) {
-        const roomRight = maxX - currentLeft;
-        const roomLeft = currentLeft - minX;
-        nextLeft = roomRight >= roomLeft
-          ? clamp(currentLeft + (isTouch ? 600 : 120), minX, maxX)
-          : clamp(currentLeft - (isTouch ? 600 : 120), minX, maxX);
-        nextTop = clamp(currentTop + (Math.random() > 0.5 ? (isTouch ? 240 : 36) : (isTouch ? -240 : -36)), minY, maxY);
-      }
-
-      noBtn.style.left = `${nextLeft}px`;
-      noBtn.style.top = `${nextTop}px`;
+      noBtn.style.left = `${target.left}px`;
+      noBtn.style.top = `${target.top}px`;
       noBtn.style.transform = `rotate(${(Math.random() * 2 - 1).toFixed(1)}deg)`;
     }
 
+    // Desktop: the button jumps before the pointer can actually land on it.
     document.addEventListener("pointermove", (event) => {
       if (questionScreen.hidden || event.pointerType !== "mouse") return;
+
       const rect = noBtn.getBoundingClientRect();
       if (pointToRectDistance(event.clientX, event.clientY, rect) <= 12) {
-        moveNoButton(event.clientX, event.clientY);
+        moveNoButton();
       }
     }, { capture: true, passive: true });
 
+    // Mobile/tablet: touching No immediately cancels the press and sends it to a corner.
     noBtn.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      moveNoButton(event.clientX, event.clientY, true);
+      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+      moveNoButton(true);
+    }, { capture: true, passive: false });
+
+    noBtn.addEventListener("touchstart", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+      moveNoButton(true);
     }, { capture: true, passive: false });
 
     noBtn.addEventListener("click", (event) => {
@@ -442,6 +459,14 @@
     }, { capture: true });
 
     noBtn.addEventListener("contextmenu", (event) => event.preventDefault());
+
+    window.addEventListener("resize", () => {
+      if (!noHasMoved) {
+        requestAnimationFrame(positionNoAtStart);
+      }
+    });
+
+    requestAnimationFrame(positionNoAtStart);
 
     yesBtn.addEventListener("click", () => {
       questionScreen.hidden = true;
