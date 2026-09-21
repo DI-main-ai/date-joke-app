@@ -175,6 +175,8 @@
 
     .form-wrap {
       margin-top: 26px;
+      width: 100%;
+      min-width: 0;
       display: grid;
       gap: 14px;
       text-align: left;
@@ -188,7 +190,10 @@
 
     input[type="datetime-local"],
     input[type="text"] {
+      display: block;
       width: 100%;
+      min-width: 0;
+      max-width: 100%;
       border: 1px solid rgba(45,27,36,.16);
       background: white;
       color: var(--text);
@@ -197,6 +202,15 @@
       font: inherit;
       font-size: 16px;
       outline: none;
+    }
+
+    input[type="datetime-local"] {
+      overflow: hidden;
+    }
+
+    input[type="datetime-local"]::-webkit-date-and-time-value {
+      min-width: 0;
+      text-align: left;
     }
 
     input[type="datetime-local"]:focus,
@@ -272,6 +286,19 @@
 
       .actions { width: 100%; height: 64px; }
       #yesBtn { width: min(220px, 74%); }
+
+      .form-wrap {
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      input[type="datetime-local"],
+      input[type="text"] {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
