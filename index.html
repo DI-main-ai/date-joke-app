@@ -354,7 +354,6 @@
     const sendStatus = document.getElementById("sendStatus");
 
     let lastNoMove = 0;
-    let lastTouchAttempt = 0;
     let noHasMoved = false;
     let lastCorner = -1;
 
@@ -540,30 +539,43 @@
       }
     }, { capture: true, passive: true });
 
-    // Mobile/tablet: exactly one jump per physical press.
-    // Some mobile browsers emit BOTH touchstart and pointerdown for one tap,
-    // so dedupe events that arrive within the same gesture window.
-    function handleNoTouchAttempt(event) {
-      const now = performance.now();
+    // Mobile/tablet: use ONE primary event path.
+    // Listen on the document in capture phase so Chrome/iOS cannot miss the
+    // interaction because of hit-testing during/after a button transition.
+    function pointInsideExpandedRect(x, y, rect, padding = 16) {
+      return (
+        x >= rect.left - padding &&
+        x <= rect.right + padding &&
+        y >= rect.top - padding &&
+        y <= rect.bottom + padding
+      );
+    }
+
+    function handleMobilePress(clientX, clientY, event) {
+      if (questionScreen.hidden) return;
+
+      const rect = noBtn.getBoundingClientRect();
+      if (!pointInsideExpandedRect(clientX, clientY, rect, 18)) return;
 
       event.preventDefault();
       event.stopPropagation();
       if (event.stopImmediatePropagation) event.stopImmediatePropagation();
 
-      if (now - lastTouchAttempt < 220) return;
-      lastTouchAttempt = now;
-
       moveNoButton(true);
     }
 
-    noBtn.addEventListener("pointerdown", (event) => {
-      if (event.pointerType === "mouse") return;
-      handleNoTouchAttempt(event);
-    }, { capture: true, passive: false });
-
-    noBtn.addEventListener("touchstart", (event) => {
-      handleNoTouchAttempt(event);
-    }, { capture: true, passive: false });
+    if (window.PointerEvent) {
+      document.addEventListener("pointerdown", (event) => {
+        if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+        handleMobilePress(event.clientX, event.clientY, event);
+      }, { capture: true, passive: false });
+    } else {
+      document.addEventListener("touchstart", (event) => {
+        if (!event.touches || !event.touches.length) return;
+        const touch = event.touches[0];
+        handleMobilePress(touch.clientX, touch.clientY, event);
+      }, { capture: true, passive: false });
+    }
 
     noBtn.addEventListener("click", (event) => {
       event.preventDefault();
