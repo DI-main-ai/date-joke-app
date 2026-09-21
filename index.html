@@ -354,6 +354,7 @@
     const sendStatus = document.getElementById("sendStatus");
 
     let lastNoMove = 0;
+    let lastTouchAttempt = 0;
     let noHasMoved = false;
     let lastCorner = -1;
 
@@ -459,15 +460,15 @@
 
       const left = cardRect.left + (cardRect.width - btnRect.width) / 2;
 
-      // Start 40% closer to Yes than before.
-      // This makes the visible gap between Yes and No equal to 60%
-      // of the previous initial gap.
+      // Reduce the current initial Yes-to-No gap by another 40%.
+      // Previous setting was 60% of the baseline; this is now 36%
+      // of that original baseline gap (60% of the current gap).
       const oldTop = yesRect.bottom
         + (cardRect.bottom - yesRect.bottom) / 2
         - btnRect.height / 2;
       const oldGap = Math.max(18, oldTop - yesRect.bottom);
       const top = clamp(
-        yesRect.bottom + oldGap * 0.60,
+        yesRect.bottom + oldGap * 0.36,
         yesRect.bottom + 18,
         cardRect.bottom - btnRect.height - 18
       );
@@ -492,13 +493,41 @@
         { left: rightX, top: bottomY }   // bottom-right
       ];
 
-      let nextCorner;
-      do {
-        nextCorner = Math.floor(Math.random() * corners.length);
-      } while (nextCorner === lastCorner);
+      // Determine which corner the button is ACTUALLY closest to right now.
+      // This prevents a random choice from ever selecting its current location.
+      const currentRect = noBtn.getBoundingClientRect();
+      let currentCorner = -1;
+      let closestDistance = Infinity;
 
-      lastCorner = nextCorner;
-      setNoPosition(corners[nextCorner].left, corners[nextCorner].top, true);
+      corners.forEach((corner, index) => {
+        const distance = Math.hypot(
+          currentRect.left - corner.left,
+          currentRect.top - corner.top
+        );
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          currentCorner = index;
+        }
+      });
+
+      // Only treat it as occupying a corner when it is actually near one.
+      if (closestDistance > 40) currentCorner = -1;
+
+      const availableCorners = corners
+        .map((corner, index) => ({ corner, index }))
+        .filter(({ index }) => index !== currentCorner && index !== lastCorner);
+
+      // If lastCorner and currentCorner happen to exclude too much,
+      // fall back to every corner except the one it is physically on.
+      const choices = availableCorners.length
+        ? availableCorners
+        : corners
+            .map((corner, index) => ({ corner, index }))
+            .filter(({ index }) => index !== currentCorner);
+
+      const choice = choices[Math.floor(Math.random() * choices.length)];
+      lastCorner = choice.index;
+      setNoPosition(choice.corner.left, choice.corner.top, true);
     }
 
     // Desktop: flee as soon as the pointer reaches the edge.
@@ -511,19 +540,29 @@
       }
     }, { capture: true, passive: true });
 
-    // Mobile/tablet: cancel the press immediately, then jump to a corner.
-    noBtn.addEventListener("pointerdown", (event) => {
+    // Mobile/tablet: exactly one jump per physical press.
+    // Some mobile browsers emit BOTH touchstart and pointerdown for one tap,
+    // so dedupe events that arrive within the same gesture window.
+    function handleNoTouchAttempt(event) {
+      const now = performance.now();
+
       event.preventDefault();
       event.stopPropagation();
       if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+
+      if (now - lastTouchAttempt < 220) return;
+      lastTouchAttempt = now;
+
       moveNoButton(true);
+    }
+
+    noBtn.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse") return;
+      handleNoTouchAttempt(event);
     }, { capture: true, passive: false });
 
     noBtn.addEventListener("touchstart", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-      moveNoButton(true);
+      handleNoTouchAttempt(event);
     }, { capture: true, passive: false });
 
     noBtn.addEventListener("click", (event) => {
