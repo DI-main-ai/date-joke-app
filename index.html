@@ -165,7 +165,8 @@
       z-index: 5;
     }
 
-    .screen[hidden] { display: none !important; }
+    .screen[hidden],
+    #noBtn[hidden] { display: none !important; }
 
     .form-wrap {
       margin-top: 26px;
@@ -268,7 +269,6 @@
         <h1>Will you go on a date with me?</h1>
         <div class="actions" id="actions">
           <button id="yesBtn" type="button">Yes ❤️</button>
-          <button id="noBtn" type="button" aria-label="No">No</button>
         </div>
       </div>
 
@@ -312,6 +312,8 @@
     </section>
   </main>
 
+  <button id="noBtn" type="button" aria-label="No">No</button>
+
   <script>
     // Optional: paste a Formspree endpoint here later to receive selections by email.
     const FORM_ENDPOINT = "";
@@ -348,6 +350,29 @@
       dateTime.min = local;
     }
 
+    function getVisibleViewport() {
+      const vv = window.visualViewport;
+      if (vv) {
+        return {
+          left: vv.offsetLeft,
+          top: vv.offsetTop,
+          width: vv.width,
+          height: vv.height,
+          right: vv.offsetLeft + vv.width,
+          bottom: vv.offsetTop + vv.height
+        };
+      }
+
+      return {
+        left: 0,
+        top: 0,
+        width: document.documentElement.clientWidth,
+        height: document.documentElement.clientHeight,
+        right: document.documentElement.clientWidth,
+        bottom: document.documentElement.clientHeight
+      };
+    }
+
     function pointToRectDistance(x, y, rect) {
       const nearestX = clamp(x, rect.left, rect.right);
       const nearestY = clamp(y, rect.top, rect.bottom);
@@ -355,45 +380,73 @@
     }
 
     function getNoGeometry() {
-      const rect = noBtn.getBoundingClientRect();
+      const viewport = getVisibleViewport();
+      const btnRect = noBtn.getBoundingClientRect();
       const yesRect = yesBtn.getBoundingClientRect();
-      const margin = 18;
-      const topY = Math.min(
-        window.innerHeight - rect.height - margin,
-        yesRect.bottom + margin
-      );
-      const bottomY = Math.max(
-        topY,
-        window.innerHeight - rect.height - margin
-      );
-      const leftX = margin;
-      const rightX = Math.max(
-        leftX,
-        window.innerWidth - rect.width - margin
+
+      const edgeMargin = 18;
+      const verticalGap = 18;
+
+      // Rectangle requested by the user:
+      // top = just below the Yes button
+      // bottom = bottom of the visible page
+      // left/right = visible page edges
+      const topY = clamp(
+        yesRect.bottom + verticalGap,
+        viewport.top + edgeMargin,
+        viewport.bottom - btnRect.height - edgeMargin
       );
 
-      return { rect, yesRect, margin, topY, bottomY, leftX, rightX };
+      const bottomY = Math.max(
+        topY,
+        viewport.bottom - btnRect.height - edgeMargin
+      );
+
+      const leftX = viewport.left + edgeMargin;
+      const rightX = Math.max(
+        leftX,
+        viewport.right - btnRect.width - edgeMargin
+      );
+
+      return {
+        viewport,
+        btnRect,
+        yesRect,
+        topY,
+        bottomY,
+        leftX,
+        rightX
+      };
+    }
+
+    function setNoPosition(left, top, rotate = false) {
+      noBtn.style.left = `${left}px`;
+      noBtn.style.top = `${top}px`;
+      noBtn.style.transform = rotate
+        ? `rotate(${(Math.random() * 2 - 1).toFixed(1)}deg)`
+        : "none";
     }
 
     function positionNoAtStart() {
       if (questionScreen.hidden || noHasMoved) return;
 
-      const { rect, yesRect } = getNoGeometry();
-      const left = (window.innerWidth - rect.width) / 2;
+      noBtn.hidden = false;
 
-      // Midway between the bottom of Yes and the bottom of the viewport.
-      const availableTop = yesRect.bottom;
-      const availableBottom = window.innerHeight;
-      const centerY = availableTop + (availableBottom - availableTop) / 2;
+      // Wait until the browser has laid out the button and Yes button.
+      const { viewport, btnRect, yesRect } = getNoGeometry();
+
+      const left = viewport.left + (viewport.width - btnRect.width) / 2;
+
+      // Exactly halfway between the bottom of Yes and the bottom
+      // of the visible viewport.
+      const midpointY = yesRect.bottom + (viewport.bottom - yesRect.bottom) / 2;
       const top = clamp(
-        centerY - rect.height / 2,
-        yesRect.bottom + 12,
-        window.innerHeight - rect.height - 18
+        midpointY - btnRect.height / 2,
+        yesRect.bottom + 18,
+        viewport.bottom - btnRect.height - 18
       );
 
-      noBtn.style.left = `${left}px`;
-      noBtn.style.top = `${top}px`;
-      noBtn.style.transform = "none";
+      setNoPosition(left, top, false);
     }
 
     function moveNoButton(force = false) {
@@ -416,17 +469,13 @@
       let nextCorner;
       do {
         nextCorner = Math.floor(Math.random() * corners.length);
-      } while (nextCorner === lastCorner && corners.length > 1);
+      } while (nextCorner === lastCorner);
 
       lastCorner = nextCorner;
-      const target = corners[nextCorner];
-
-      noBtn.style.left = `${target.left}px`;
-      noBtn.style.top = `${target.top}px`;
-      noBtn.style.transform = `rotate(${(Math.random() * 2 - 1).toFixed(1)}deg)`;
+      setNoPosition(corners[nextCorner].left, corners[nextCorner].top, true);
     }
 
-    // Desktop: the button jumps before the pointer can actually land on it.
+    // Desktop: flee as soon as the pointer reaches the edge.
     document.addEventListener("pointermove", (event) => {
       if (questionScreen.hidden || event.pointerType !== "mouse") return;
 
@@ -436,7 +485,7 @@
       }
     }, { capture: true, passive: true });
 
-    // Mobile/tablet: touching No immediately cancels the press and sends it to a corner.
+    // Mobile/tablet: cancel the press immediately, then jump to a corner.
     noBtn.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -460,16 +509,28 @@
 
     noBtn.addEventListener("contextmenu", (event) => event.preventDefault());
 
-    window.addEventListener("resize", () => {
-      if (!noHasMoved) {
+    function refreshNoPosition() {
+      if (!noHasMoved && !questionScreen.hidden) {
         requestAnimationFrame(positionNoAtStart);
       }
-    });
+    }
 
-    requestAnimationFrame(positionNoAtStart);
+    window.addEventListener("resize", refreshNoPosition);
+    window.addEventListener("orientationchange", refreshNoPosition);
+    window.addEventListener("pageshow", refreshNoPosition);
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", refreshNoPosition);
+      window.visualViewport.addEventListener("scroll", refreshNoPosition);
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(positionNoAtStart);
+    });
 
     yesBtn.addEventListener("click", () => {
       questionScreen.hidden = true;
+      noBtn.hidden = true;
       scheduleScreen.hidden = false;
       confirmationScreen.hidden = true;
       setMinimumDateTime();
