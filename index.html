@@ -459,11 +459,15 @@
 
       const left = cardRect.left + (cardRect.width - btnRect.width) / 2;
 
-      // Exactly halfway between the bottom of Yes and the bottom
-      // of the white card.
-      const midpointY = yesRect.bottom + (cardRect.bottom - yesRect.bottom) / 2;
+      // Start 40% closer to Yes than before.
+      // This makes the visible gap between Yes and No equal to 60%
+      // of the previous initial gap.
+      const oldTop = yesRect.bottom
+        + (cardRect.bottom - yesRect.bottom) / 2
+        - btnRect.height / 2;
+      const oldGap = Math.max(18, oldTop - yesRect.bottom);
       const top = clamp(
-        midpointY - btnRect.height / 2,
+        yesRect.bottom + oldGap * 0.60,
         yesRect.bottom + 18,
         cardRect.bottom - btnRect.height - 18
       );
