@@ -180,7 +180,8 @@
       padding-left: 4px;
     }
 
-    input[type="datetime-local"] {
+    input[type="datetime-local"],
+    input[type="text"] {
       width: 100%;
       border: 1px solid rgba(45,27,36,.16);
       background: white;
@@ -192,7 +193,8 @@
       outline: none;
     }
 
-    input[type="datetime-local"]:focus {
+    input[type="datetime-local"]:focus,
+    input[type="text"]:focus {
       border-color: rgba(239,71,111,.65);
       box-shadow: 0 0 0 4px rgba(239,71,111,.10);
     }
@@ -264,8 +266,6 @@
       <div id="questionScreen" class="screen">
         <span class="emoji">💌</span>
         <h1>Will you go on a date with me?</h1>
-        <p>I have a very important question and there is definitely no trick involved.</p>
-
         <div class="actions" id="actions">
           <button id="yesBtn" type="button">Yes ❤️</button>
           <button id="noBtn" type="button" aria-label="No">No</button>
@@ -280,6 +280,17 @@
         <form id="dateForm" class="form-wrap">
           <label for="dateTime">When are you free?</label>
           <input id="dateTime" name="dateTime" type="datetime-local" required />
+
+          <label for="favoriteFood">Favorite restaurant or type of food?</label>
+          <input
+            id="favoriteFood"
+            name="favoriteFood"
+            type="text"
+            placeholder="Sushi, Italian, your favorite restaurant..."
+            autocomplete="off"
+            required
+          />
+
           <button class="submit" type="submit">Lock it in 💘</button>
           <div id="sendStatus" class="status" aria-live="polite"></div>
         </form>
@@ -292,6 +303,10 @@
         <div class="confirmation">
           <span>Pickup time</span>
           <strong id="chosenDate"></strong>
+        </div>
+        <div class="confirmation">
+          <span>Favorite restaurant / food</span>
+          <strong id="chosenFood"></strong>
         </div>
         <p class="small">Screenshot this so there can be no claims of “I forgot.” 😌</p>
         <button id="changeBtn" class="secondary" type="button">Change the time</button>
@@ -311,7 +326,9 @@
     const noBtn = document.getElementById("noBtn");
     const dateForm = document.getElementById("dateForm");
     const dateTime = document.getElementById("dateTime");
+    const favoriteFood = document.getElementById("favoriteFood");
     const chosenDate = document.getElementById("chosenDate");
+    const chosenFood = document.getElementById("chosenFood");
     const changeBtn = document.getElementById("changeBtn");
     const sendStatus = document.getElementById("sendStatus");
 
@@ -442,7 +459,7 @@
 
     dateForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!dateTime.value) return;
+      if (!dateTime.value || !favoriteFood.value.trim()) return;
 
       const selected = new Date(dateTime.value);
       if (Number.isNaN(selected.getTime()) || selected <= new Date()) {
@@ -460,6 +477,7 @@
       });
 
       chosenDate.textContent = formatted;
+      chosenFood.textContent = favoriteFood.value.trim();
       scheduleScreen.hidden = true;
       confirmationScreen.hidden = false;
 
@@ -475,6 +493,7 @@
           body: JSON.stringify({
             selected_date_time: formatted,
             selected_date_time_raw: dateTime.value,
+            favorite_restaurant_or_food: favoriteFood.value.trim(),
             _subject: "A date was selected ❤️"
           })
         });
