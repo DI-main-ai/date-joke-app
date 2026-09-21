@@ -85,6 +85,14 @@
       min-height: calc(100dvh - 40px);
     }
 
+    .recipient-name {
+      margin: 0 0 12px;
+      color: var(--yes);
+      font-size: clamp(20px, 5vw, 28px);
+      font-weight: 800;
+      letter-spacing: -.01em;
+    }
+
     h1 {
       font-size: clamp(30px, 7vw, 52px);
       line-height: 1.06;
@@ -367,7 +375,8 @@
     <section class="card question-mode" id="mainCard">
       <div id="questionScreen" class="screen">
         <span class="emoji">💌</span>
-        <h1>Will you go on a date with me?</h1>
+        <div id="recipientName" class="recipient-name" hidden></div>
+        <h1 id="questionTitle">Will you go on a date with me?</h1>
         <div class="actions" id="actions">
           <button id="yesBtn" type="button">Yes ❤️</button>
         </div>
@@ -418,11 +427,14 @@
 
   <button id="noBtn" type="button" aria-label="No">No</button>
 
+  <script src="config.js"></script>
   <script>
-    // Optional: paste a Formspree endpoint here later to receive selections by email.
-    const FORM_ENDPOINT = "";
+    const BACKEND_URL = window.DATE_JOKE_BACKEND_URL || "";
+    const LINK_TOKEN = new URLSearchParams(window.location.search).get("d");
 
     const mainCard = document.getElementById("mainCard");
+    const recipientName = document.getElementById("recipientName");
+    const questionTitle = document.getElementById("questionTitle");
     const questionScreen = document.getElementById("questionScreen");
     const scheduleScreen = document.getElementById("scheduleScreen");
     const confirmationScreen = document.getElementById("confirmationScreen");
@@ -464,6 +476,65 @@
         minute: "2-digit"
       });
       dateDisplay.classList.add("has-value");
+    }
+
+    function loadPersonalizedInvitation() {
+      if (!LINK_TOKEN) return;
+
+      if (!BACKEND_URL) {
+        questionTitle.textContent = "This personalized link is not configured yet.";
+        yesBtn.hidden = true;
+        noBtn.hidden = true;
+        return;
+      }
+
+      window.receiveDateJokeInvitation = function(payload) {
+        if (!payload || !payload.ok) {
+          questionTitle.textContent = "This date link is no longer available.";
+          yesBtn.hidden = true;
+          noBtn.hidden = true;
+          return;
+        }
+
+        recipientName.textContent = payload.recipientName + " ❤️";
+        recipientName.hidden = false;
+      };
+
+      const script = document.createElement("script");
+      const params = new URLSearchParams({
+        action: "get",
+        token: LINK_TOKEN,
+        callback: "receiveDateJokeInvitation",
+        _: String(Date.now())
+      });
+      script.src = BACKEND_URL + "?" + params.toString();
+      script.onerror = () => {
+        questionTitle.textContent = "This date link could not be loaded.";
+        yesBtn.hidden = true;
+        noBtn.hidden = true;
+      };
+      document.head.appendChild(script);
+    }
+
+    async function sendPersonalizedResponse(formattedDate) {
+      if (!LINK_TOKEN || !BACKEND_URL) return;
+
+      const body = new URLSearchParams({
+        action: "respond",
+        token: LINK_TOKEN,
+        selectedDateTime: formattedDate,
+        selectedDateTimeRaw: dateTime.value,
+        favoriteFood: favoriteFood.value.trim()
+      });
+
+      await fetch(BACKEND_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+        },
+        body
+      });
     }
 
     function setMinimumDateTime() {
@@ -753,24 +824,12 @@
       scheduleScreen.hidden = true;
       confirmationScreen.hidden = false;
 
-      if (!FORM_ENDPOINT) return;
-
-      try {
-        await fetch(FORM_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify({
-            selected_date_time: formatted,
-            selected_date_time_raw: dateTime.value,
-            favorite_restaurant_or_food: favoriteFood.value.trim(),
-            _subject: "A date was selected ❤️"
-          })
-        });
-      } catch (error) {
-        console.error(error);
+      if (LINK_TOKEN && BACKEND_URL) {
+        try {
+          await sendPersonalizedResponse(formatted);
+        } catch (error) {
+          console.error("Could not send personalized response", error);
+        }
       }
     });
 
@@ -787,6 +846,7 @@
     }
 
     setMinimumDateTime();
+    loadPersonalizedInvitation();
   </script>
 </body>
 </html>
