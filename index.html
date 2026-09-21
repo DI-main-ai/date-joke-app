@@ -80,6 +80,11 @@
       z-index: 2;
     }
 
+    .card.question-mode {
+      height: calc(100dvh - 40px);
+      min-height: calc(100dvh - 40px);
+    }
+
     h1 {
       font-size: clamp(30px, 7vw, 52px);
       line-height: 1.06;
@@ -256,9 +261,13 @@
 
       .card {
         width: min(92vw, 560px);
-        min-height: calc(100dvh - 36px);
         padding: 32px 22px;
         border-radius: 24px;
+      }
+
+      .card.question-mode {
+        height: calc(100dvh - 36px);
+        min-height: calc(100dvh - 36px);
       }
 
       .actions { width: 100%; height: 64px; }
@@ -274,7 +283,7 @@
   <div class="hearts" aria-hidden="true" id="hearts"></div>
 
   <main>
-    <section class="card">
+    <section class="card question-mode" id="mainCard">
       <div id="questionScreen" class="screen">
         <span class="emoji">💌</span>
         <h1>Will you go on a date with me?</h1>
@@ -329,6 +338,7 @@
     // Optional: paste a Formspree endpoint here later to receive selections by email.
     const FORM_ENDPOINT = "";
 
+    const mainCard = document.getElementById("mainCard");
     const questionScreen = document.getElementById("questionScreen");
     const scheduleScreen = document.getElementById("scheduleScreen");
     const confirmationScreen = document.getElementById("confirmationScreen");
@@ -541,6 +551,7 @@
     });
 
     yesBtn.addEventListener("click", () => {
+      mainCard.classList.remove("question-mode");
       questionScreen.hidden = true;
       noBtn.hidden = true;
       scheduleScreen.hidden = false;
